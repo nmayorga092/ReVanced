@@ -1,10 +1,10 @@
 #### ⚠️ Do not download modules from 3rd party sources like random websites you found on Google. Only use this repository. I am not responsible for anything they may contain.
 
 # ReVanced Magisk Module
-[![Build Modules](https://github.com/nmayorga092/revanced-magisk-module/actions/workflows/build.yml/badge.svg)](https://github.com/nmayorga092/revanced-magisk-module/actions/workflows/build.yml)
-[![CI](https://github.com/nmayorga092/revanced-magisk-module/actions/workflows/ci.yml/badge.svg?event=schedule)](https://github.com/nmayorga092/revanced-magisk-module/actions/workflows/ci.yml)
+[![Build Modules](https://github.com/nmayorga092/revanced/actions/workflows/build.yml/badge.svg)](https://github.com/nmayorga092/revanced/actions/workflows/build.yml)
+[![CI](https://github.com/nmayorga092/revanced/actions/workflows/ci.yml/badge.svg?event=schedule)](https://github.com/nmayorga092/revanced/actions/workflows/ci.yml)
 
-Get the [latest CI release](https://github.com/nmayorga092/revanced-magisk-module/releases).
+Get the [latest CI release](https://github.com/nmayorga092/revanced/releases).
 
 [**mindetach module**](https://github.com/j-hc/mindetach-magisk) in the releases section detaches YouTube and YouTube Music from Play Store and blocks it from updating them.
 
