@@ -9,7 +9,7 @@ build-mindetach-module = false
 
 
 [YouTube]
-enabled = true                                                                                        # add 'enabled = false' key to entries to not build them
+enabled = false                                                                                        # add 'enabled = false' key to entries to not build them
 build-mode = "module"                                                                                 # 'both', 'apk' or 'module'
 excluded-patches = "debugging return-youtube-dislike custom-branding swipe-controls downloads"        # whitespace seperated list of patches to exclude
 included-patches = ""                                                                                 # whitespace seperated list of patches to include
