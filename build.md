@@ -13,4 +13,4 @@ Tiktok: 27.2.5
 
 Install [Vanced Microg](https://github.com/TeamVanced/VancedMicroG/releases) to be able to use non-root YouTube or Music  
 
-[revanced-magisk-module](https://github.com/j-hc/revanced-magisk-module)  
+[revanced](https://github.com/nmayorga092/revanced)  
