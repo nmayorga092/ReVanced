@@ -1,4 +1,4 @@
-# SEE https://github.com/j-hc/revanced-magisk-module/blob/main/CONFIG.md for more detailed explanations
+# SEE https://github.com/nmayorga092/revanced/blob/main/CONFIG.md for more detailed explanations
 
 [main-config]
 compression-level = 9               # compression level for module zips. between 1 and 9

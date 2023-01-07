@@ -26,7 +26,7 @@ Get the [latest CI release](https://github.com/nmayorga092/revanced/releases).
 [**See the list of patches**](https://github.com/revanced/revanced-patches#-list-of-available-patches)
 
  * Star the repo :eyes:
- * [Fork the repo](https://github.com/j-hc/revanced-magisk-module/fork) or use it as a template
+ * [Fork the repo](https://github.com/nmayorga092/revanced/fork) or use it as a template
  * Edit the options in [`config.toml`](./config.toml)
  * Run the build [workflow](../../actions/workflows/build.yml)
  * Grab your modules and APKs from [releases](../../releases)
@@ -39,7 +39,7 @@ To be able to use non-root variants of YouTube and YT Music, install [Vanced Mic
 Make sure you have JDK 17 installed. Then run:
 
 ```console
-$ git clone --recurse-submodules https://github.com/j-hc/revanced-magisk-module
+$ git clone --recurse-submodules https://github.com/nmayorga092/revanced
 $ cd revanced-magisk-module
 $ ./build.sh
 ```
