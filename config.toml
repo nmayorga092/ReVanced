@@ -67,7 +67,7 @@ merge-integrations = true
 
 [Tiktok]
 build-mode = "apk"
-version = "27.2.5"
+version = "27.7.3"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/tiktok-pte-ltd/tik-tok-including-musical-ly/"
 merge-integrations = true
 
