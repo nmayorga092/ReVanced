@@ -1,4 +1,4 @@
-# SEE https://github.com/nmayorga092/revanced/blob/main/CONFIG.md for more detailed explanations
+# See https://github.com/nmayorga092/revanced/blob/main/CONFIG.md for more detailed explanations
 
 [main-config]
 compression-level = 9               # compression level for module zips. between 1 and 9
@@ -9,7 +9,7 @@ build-mindetach-module = false
 
 
 [YouTube]
-enabled = false                                                                                        # add 'enabled = false' key to entries to not build them
+enabled = false                                                                                       # add 'enabled = false' key to entries to not build them
 build-mode = "module"                                                                                 # 'both', 'apk' or 'module'
 excluded-patches = "debugging return-youtube-dislike custom-branding swipe-controls downloads"        # whitespace seperated list of patches to exclude
 included-patches = ""                                                                                 # whitespace seperated list of patches to include
@@ -48,7 +48,7 @@ arch = "arm-v7a"
 [Twitter]
 enabled = false
 build-mode = "apk"
-excluded-patches = ""
+excluded-patches = "hide-views-stats"
 version = "latest"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/twitter-inc/twitter/"
 
@@ -65,7 +65,7 @@ version = "latest"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/twitch-interactive-inc/twitch/"
 merge-integrations = true
 
-[Tiktok]
+[TikTok]
 build-mode = "apk"
 version = "27.2.5"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/tiktok-pte-ltd/tik-tok-including-musical-ly/"
@@ -75,18 +75,13 @@ merge-integrations = true
 enabled = false
 build-mode = "apk"
 version = "latest"
+uptodown-dlurl = "https://spotify.en.uptodown.com/android"
 
-[TickTick]
+[Citra]
 enabled = false
 build-mode = "apk"
 version = "latest"
-apkmirror-dlurl = "https://www.apkmirror.com/apk/appest-inc/ticktick-to-do-list-with-reminder-day-planner/"
-
-[WarnWetter]
-enabled = false
-version = "latest"
-build-mode = "apk"
-apkmirror-dlurl = "https://www.apkmirror.com/apk/appest-inc/deutscher-wetterdienst/warnwetter/"
+apkmirror-dlurl = "https://www.apkmirror.com/apk/citra-emulator/citra-emulator/"
 
 [Backdrops]
 enabled = false
@@ -94,8 +89,44 @@ build-mode = "apk"
 version = "latest"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/backdrops/backdrops-wallpapers/"
 
-[Windy]
+[WarnWetter]
+enabled = false
+version = "latest"
+build-mode = "apk"
+apkmirror-dlurl = "https://www.apkmirror.com/apk/appest-inc/deutscher-wetterdienst/warnwetter/"
+
+[Windyapp]
+enabled = false
+version = "latest"
+build-mode = "apk"
+apkmirror-dlurl = "https://www.apkmirror.com/apk/windy-weather-world-inc/windy-wind-weather-forecast/"
+
+[MyExpenses]
+enabled = false
+version = "latest"
+build-mode = "apk"
+uptodown-dlurl = "https://my-expenses.en.uptodown.com/android"
+
+[NyxMusicPlayer]
+enabled = false
+version = "latest"
+build-mode = "apk"
+apkmirror-dlurl = "https://www.apkmirror.com/apk/awedea/nyx-music-player/"
+
+[IconPackStudio]
+enabled = true
+version = "latest"
+build-mode = "apk"
+apkmirror-dlurl = "https://www.apkmirror.com/apk/smart-launcher-team/icon-pack-studio/"
+
+[TickTick]
 enabled = false
 build-mode = "apk"
 version = "latest"
-apkmirror-dlurl = "https://www.apkmirror.com/apk/windy-weather-world-inc/windy-wind-weather-forecast/"
+apkmirror-dlurl = "https://www.apkmirror.com/apk/appest-inc/ticktick-to-do-list-with-reminder-day-planner/"
+
+[Tasker]
+enabled = false
+build-mode = "apk"
+version = "latest"
+apkmirror-dlurl = "https://www.apkmirror.com/apk/joaomgcd/tasker/"
