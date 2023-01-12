@@ -32,7 +32,6 @@ for t in $(toml_get_all_tables); do
 	app_args[version]=$(toml_get "$t" version) || app_args[version]="auto"
 	app_args[app_name]=$(toml_get "$t" app-name) || app_args[app_name]=$t
 	app_args[allow_alpha_version]=$(toml_get "$t" allow-alpha-version) || app_args[allow_alpha_version]=false
-	app_args[rip_libs]=$(toml_get "$t" rip-libs) || app_args[rip_libs]=false
 	app_args[build_mode]=$(toml_get "$t" build-mode) || app_args[build_mode]=apk
 	app_args[microg_patch]=$(toml_get "$t" microg-patch) || app_args[microg_patch]=""
 	app_args[uptodown_dlurl]=$(toml_get "$t" uptodown-dlurl) && app_args[uptodown_dlurl]=${app_args[uptodown_dlurl]%/} || app_args[uptodown_dlurl]=""
@@ -78,6 +77,6 @@ music_arm64_mode=$(toml_get "Music-arm64" "build-mode") || music_arm64_mode="mod
 if [ "$youtube_mode" != module ] || [ "$music_arm_mode" != module ] || [ "$music_arm64_mode" != module ]; then
 	log "\nInstall [Vanced Microg](https://github.com/TeamVanced/VancedMicroG/releases) to be able to use non-root YouTube or Music"
 fi
-log "\n[revanced](https://github.com/nmayorga092/revanced)"
+log "\n[revanced-magisk-module](https://github.com/j-hc/revanced-magisk-module)"
 
 echo "Done"

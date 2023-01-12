@@ -11,7 +11,7 @@ if [ "${GITHUB_TOKEN+x}" ]; then
 else
 	GH_AUTH_HEADER=""
 fi
-GITHUB_REPOSITORY=${GITHUB_REPOSITORY:-"nmayorga092/revanced"}
+GITHUB_REPOSITORY=${GITHUB_REPOSITORY:-"j-hc/revanced-magisk-module"}
 NEXT_VER_CODE=${NEXT_VER_CODE:-$(date +'%Y%m%d')}
 WGET_HEADER="User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:108.0) Gecko/20100101 Firefox/108.0"
 DRYRUN=false
@@ -240,12 +240,8 @@ build_rv() {
 			patcher_args="$patcher_args --experimental"
 		fi
 		if [ "$build_mode" = module ]; then
-			if [ "${args[rip_libs]}" = true ]; then
-				# --unsigned and --rip-lib is only available in my revanced-cli builds
-				patcher_args="$patcher_args --unsigned --rip-lib arm64-v8a --rip-lib armeabi-v7a"
-			else
-				patcher_args="$patcher_args --unsigned"
-			fi
+			# --unsigned and --rip-lib is only available in my revanced-cli builds
+			patcher_args="$patcher_args --unsigned --rip-lib arm64-v8a --rip-lib armeabi-v7a"
 		fi
 		if [ $get_latest_ver = true ]; then
 			local apkmvers uptwodvers
@@ -326,7 +322,6 @@ build_rv() {
 
 		local module_output="${app_name_l}-revanced-magisk-v${version}-${arch}.zip"
 		zip_module "$patched_apk" "$module_output" "$stock_apk" "$pkg_name" "$base_template"
-		rm -rf "$base_template"
 
 		echo "Built ${args[app_name]} (${arch}) (root): '${BUILD_DIR}/${module_output}'"
 	done
@@ -342,7 +337,7 @@ customize_sh() {
 	echo "${s//__PKGVER/$2}" >"${3}/customize.sh"
 }
 service_sh() {
-	locals="${SERVICE_SH//__PKGNAME/$1}"
+	local s="${SERVICE_SH//__PKGNAME/$1}"
 	echo "${s//__PKGVER/$2}" >"${3}/service.sh"
 }
 module_prop() {
@@ -350,7 +345,7 @@ module_prop() {
 name=${2}
 version=v${3}
 versionCode=${NEXT_VER_CODE}
-author=j-hc & nmayorga
+author=j-hc
 description=${4}" >"${6}/module.prop"
 
 	if [ "$ENABLE_MAGISK_UPDATE" = true ]; then echo "updateJson=${5}" >>"${6}/module.prop"; fi
