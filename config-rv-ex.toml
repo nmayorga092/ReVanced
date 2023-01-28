@@ -3,14 +3,13 @@ compression-level = 9 # compression level for module zips. between 1 and 9
 logging-to-file = true # enables logging of every patch process to a seperate file
 enable-magisk-update = true # set this to false if you do not want to receive updates for the module in magisk app
 parallel-jobs = 3 # max number of concurrent building jobs
-build-mindetach-module = false
+build-mindetach-module = true
 # extended
 patches-source = "inotia00/revanced-patches"
 integrations-source = "inotia00/revanced-integrations"
 rv-brand = "ReVanced Extended"
 
 [YouTube]
-enabled = false
 build-mode = "both"
 excluded-patches = ""
 included-patches = ""
@@ -19,7 +18,6 @@ exclusive-patches = false
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/youtube/"
 
 [Music-arm64]
-enabled = false
 build-mode = "both"
 app-name = "Music"
 excluded-patches = ""
@@ -29,7 +27,6 @@ apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/youtube-music/"
 arch = "arm64-v8a"
 
 [Music-arm]
-enabled = false
 build-mode = "both"
 app-name = "Music"
 excluded-patches = ""
