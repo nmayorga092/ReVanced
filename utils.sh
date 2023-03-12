@@ -7,9 +7,7 @@ BUILD_DIR="build"
 PKGS_LIST="${TEMP_DIR}/module-pkgs"
 
 if [ "${GITHUB_TOKEN:-}" ]; then GH_HEADER="Authorization: token ${GITHUB_TOKEN}"; else GH_HEADER=; fi
-GITHUB_REPOSITORY=${GITHUB_REPOSITORY:-"j-hc/revanced-magisk-module"}
 NEXT_VER_CODE=${NEXT_VER_CODE:-$(date +'%Y%m%d')}
-WGET_HEADER="User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:108.0) Gecko/20100101 Firefox/108.0"
 REBUILD=false
 OS=$(uname -o)
 
@@ -36,7 +34,10 @@ toml_get() {
 # ---------------------------------------------------
 
 pr() { echo -e "\033[0;32m[+] ${1}\033[0m"; }
-epr() { echo -e "\033[0;31m[-] ${1}\033[0m"; }
+epr() {
+	echo -e "\033[0;31m[-] ${1}\033[0m"
+	if [ "${GITHUB_REPOSITORY:-}" ]; then echo -e "::error::utils.sh [-] ${1}\n"; fi
+}
 abort() { echo >&2 -e "\033[0;31mABORT: $1\033[0m" && exit 1; }
 
 get_prebuilts() {
@@ -120,42 +121,34 @@ set_prebuilts() {
 	HTMLQ="${TEMP_DIR}/htmlq"
 }
 
-req() { wget -nv -O "$2" --header="$WGET_HEADER" "$1"; }
-gh_req() { wget -nv -O "$2" --header="$GH_HEADER" "$1"; }
+_req() {
+	if [ "$2" = - ]; then
+		wget -nv -O "$2" --header="$3" "$1"
+	else
+		local dlp
+		dlp="$(dirname "$2")/tmp.$(basename "$2")"
+		wget -nv -O "$dlp" --header="$3" "$1"
+		mv -f "$dlp" "$2"
+	fi
+}
+req() { _req "$1" "$2" "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:108.0) Gecko/20100101 Firefox/108.0"; }
+gh_req() { _req "$1" "$2" "$GH_HEADER"; }
+
 log() { echo -e "$1  " >>build.md; }
 get_largest_ver() {
-	local max v
-	read -r max
-	semver_validate "$max" || return 1
-	while read -r v; do
-		if [ "$(semver_cmp "$max" "$v")" = 1 ]; then max=$v; fi
-	done
-	echo "$max"
-}
-get_patch_last_supported_ver() {
-	jq -r ".[] | select(.compatiblePackages[].name==\"${1}\") | .compatiblePackages[].versions" "$RV_PATCHES_JSON" | tr -d ' ,\t[]"' | sort -u | grep -v '^$' | get_largest_ver || return 1
-}
-semver_cmp() {
-	IFS=. read -r -a v1 <<<"${1//[^.0-9]/}"
-	IFS=. read -r -a v2 <<<"${2//[^.0-9]/}"
-	local c1="${1//[^.]/}"
-	local c2="${2//[^.]/}"
-	local mi=$((${#c1} < ${#c2} ? ${#c1} : ${#c2}))
-	for ((i = 0; i <= mi; i++)); do
-		if ((v1[i] > v2[i])); then
-			echo -1
-			return 0
-		elif ((v2[i] > v1[i])); then
-			echo 1
-			return 0
-		fi
-	done
-	echo 0
+	local vers m
+	vers=$(tee)
+	m=$(head -1 <<<"$vers")
+	if ! semver_validate "$m"; then echo "$m"; else sort -rV <<<"$vers" | head -1; fi
 }
 semver_validate() {
 	local a="${1%-*}"
 	local ac="${a//[.0-9]/}"
 	[ ${#ac} = 0 ]
+}
+get_patch_last_supported_ver() {
+	jq -r ".[] | select(.compatiblePackages[].name==\"${1}\" and .excluded==false) | .compatiblePackages[].versions" "$RV_PATCHES_JSON" |
+		tr -d ' ,\t[]"' | sort -u | grep -v '^$' | get_largest_ver || return 1
 }
 
 dl_if_dne() {
@@ -174,25 +167,30 @@ isoneof() {
 
 # -------------------- apkmirror --------------------
 dl_apkmirror() {
-	local url=$1 version=${2// /-} output=$3 arch=$4
+	local url=$1 version=${2// /-} output=$3 apkorbundle=$4 arch=$5 dpi=$6
+	[ "${DRYRUN:-}" ] && {
+		echo >"$output"
+		return 0
+	}
 	local resp node app_table dlurl=""
 	[ "$arch" = universal ] && apparch=(universal noarch 'arm64-v8a + armeabi-v7a') || apparch=("$arch")
 	url="${url}/${url##*/}-${version//./-}-release/"
 	resp=$(req "$url" -) || return 1
-	for ((n = 2; n < 50; n++)); do
-		node=$($HTMLQ "div.table-row:nth-child($n)" -r "span.signature:nth-child(n)" <<<"$resp")
+	for ((n = 2; n < 40; n++)); do
+		node=$($HTMLQ "div.table-row:nth-child($n)" -r "span:nth-child(n+3)" <<<"$resp")
 		if [ -z "$node" ]; then break; fi
 		app_table=$($HTMLQ --text --ignore-whitespace <<<"$node")
-		if [ "$(sed -n 8p <<<"$app_table")" = nodpi ] &&
-			[ "$(sed -n 3p <<<"$app_table")" = APK ] &&
-			isoneof "$(sed -n 6p <<<"$app_table")" "${apparch[@]}"; then
+		if [ "$(sed -n 3p <<<"$app_table")" = "$apkorbundle" ] && { [ "$apkorbundle" = BUNDLE ] ||
+			{ [ "$apkorbundle" = APK ] && [ "$(sed -n 6p <<<"$app_table")" = "$dpi" ] &&
+				isoneof "$(sed -n 4p <<<"$app_table")" "${apparch[@]}"; }; }; then
 			dlurl=https://www.apkmirror.com$($HTMLQ --attribute href "div:nth-child(1) > a:nth-child(1)" <<<"$node")
 			break
 		fi
 	done
 	[ -z "$dlurl" ] && return 1
-	url="https://www.apkmirror.com$(req "$dlurl" - | tr '\n' ' ' | sed -n 's;.*href="\(.*key=[^"]*\)">.*;\1;p')"
-	url="https://www.apkmirror.com$(req "$url" - | tr '\n' ' ' | sed -n 's;.*href="\(.*key=[^"]*\)">.*;\1;p')"
+	url="https://www.apkmirror.com$(req "$dlurl" - | sed -n 's;.*href="\(.*key=[^"]*\)">.*;\1;p' | tail -1)"
+	if [ "$apkorbundle" = BUNDLE ] && [[ "$url" != *"&forcebaseapk=true" ]]; then url="${url}&forcebaseapk=true"; fi
+	url="https://www.apkmirror.com$(req "$url" - | sed -n 's;.*href="\(.*key=[^"]*\)">.*;\1;p')"
 	req "$url" "$output"
 }
 get_apkmirror_vers() {
@@ -204,8 +202,7 @@ get_apkmirror_vers() {
 	if [ "$allow_alpha_version" = false ]; then
 		local IFS=$'\n'
 		vers=$(grep -iv "\(beta\|alpha\)" <<<"$vers")
-		local v
-		local r_vers=()
+		local v r_vers=()
 		for v in $vers; do
 			grep -iq "${v} \(beta\|alpha\)" <<<"$apkm_resp" || r_vers+=("$v")
 		done
@@ -234,6 +231,19 @@ get_uptodown_pkg_name() {
 }
 # --------------------------------------------------
 
+# -------------------- apkmonk ---------------------
+get_apkmonk_resp() { req "${1}" -; }
+get_apkmonk_vers() { grep -oP 'download_ver.+?>\K([0-9,\.]*)' <<<"$1"; }
+dl_apkmonk() {
+	local apkmonk_resp=$1 version=$2 output=$3
+	local url
+	url="https://www.apkmonk.com/down_file?pkg="$(echo "$apkmonk_resp" | grep "$version</a>" | grep -oP 'href=\"/download-app/\K.+?(?=/?\">)' | sed 's;/;\&key=;') || return 1
+	url=$(req "$url" - | grep -oP 'https.+?(?=\",)')
+	req "$url" "$output"
+}
+get_apkmonk_pkg_name() { grep -oP '.*apkmonk\.com\/app\/\K([,\w,\.]*)' <<<"$1"; }
+# --------------------------------------------------
+
 patch_apk() {
 	local stock_input=$1 patched_apk=$2 patcher_args=$3
 	declare -r tdir=$(mktemp -d -p $TEMP_DIR)
@@ -248,16 +258,6 @@ patch_apk() {
 		eval "$cmd"
 	fi
 	[ -f "$patched_apk" ]
-}
-
-zip_module() {
-	pr "Packing module ($app_name)"
-	local patched_apk=$1 module_name=$2 stock_apk=$3 pkg_name=$4 template_dir=$5
-	cp -f "$patched_apk" "${template_dir}/base.apk"
-	cp -f "$stock_apk" "${template_dir}/${pkg_name}.apk"
-	pushd >/dev/null "$template_dir" || abort "Module template dir not found"
-	zip -"$COMPRESSION_LEVEL" -FSqr "../../${BUILD_DIR}/${module_name}" .
-	popd >/dev/null || :
 }
 
 build_rv() {
@@ -277,6 +277,9 @@ build_rv() {
 	elif [ "$dl_from" = uptodown ]; then
 		uptwod_resp=$(get_uptodown_resp "${args[uptodown_dlurl]}")
 		pkg_name=$(get_uptodown_pkg_name "${args[uptodown_dlurl]}")
+	elif [ "$dl_from" = apkmonk ]; then
+		pkg_name=$(get_apkmonk_pkg_name "${args[apkmonk_dlurl]}")
+		apkmonk_resp=$(get_apkmonk_resp "${args[apkmonk_dlurl]}")
 	fi
 
 	local get_latest_ver=false
@@ -297,10 +300,13 @@ build_rv() {
 		elif [ "$dl_from" = uptodown ]; then
 			uptwodvers=$(get_uptodown_vers "$uptwod_resp")
 			version=$(get_largest_ver <<<"$uptwodvers") || version=$(head -1 <<<"$uptwodvers")
+		elif [ "$dl_from" = apkmonk ]; then
+			apkmonkvers=$(get_apkmonk_vers "$apkmonk_resp")
+			version=$(get_largest_ver <<<"$apkmonkvers") || version=$(head -1 <<<"$apkmonkvers")
 		fi
 	fi
 	if [ -z "$version" ]; then
-		pr "empty version, not building ${app_name}."
+		epr "empty version, not building ${app_name}."
 		return 0
 	fi
 	pr "Choosing version '${version}' (${app_name})"
@@ -317,14 +323,20 @@ build_rv() {
 			elif [ "$arch" = "arm-v7a" ]; then
 				apkm_arch="armeabi-v7a"
 			fi
-			if ! dl_apkmirror "${args[apkmirror_dlurl]}" "$version" "$stock_apk" "$apkm_arch"; then
-				epr "ERROR: Could not find any release of '${app_name}' with version '${version}' and arch '${apkm_arch}' from APKMirror"
+			if ! dl_apkmirror "${args[apkmirror_dlurl]}" "$version" "$stock_apk" APK "$apkm_arch" "${args[dpi]}"; then
+				epr "ERROR: Could not find any release of '${app_name}' with version '${version}', arch '${apkm_arch}' and dpi '${args[dpi]}' from APKMirror"
 				return 0
 			fi
 		elif [ "$dl_from" = uptodown ]; then
 			pr "Downloading '${app_name}' from Uptodown"
 			if ! dl_uptodown "$uptwod_resp" "$version" "$stock_apk"; then
 				epr "ERROR: Could not download ${app_name} from Uptodown"
+				return 0
+			fi
+		elif [ "$dl_from" = apkmonk ]; then
+			pr "Downloading '${app_name}' from Apkmonk"
+			if ! dl_apkmonk "$apkmonk_resp" "$version" "$stock_apk"; then
+				epr "ERROR: Could not download ${app_name} from Apkmonk"
 				return 0
 			fi
 		fi
@@ -334,7 +346,9 @@ build_rv() {
 	else
 		grep -q "${app_name} (${arch}):" build.md || log "${app_name} (${arch}): ${version}"
 	fi
-	if jq -r ".[] | select(.compatiblePackages[].name==\"${pkg_name}\") | .dependencies[]" "$RV_PATCHES_JSON" | grep -qF integrations; then
+
+	if jq -r ".[] | select(.compatiblePackages[].name==\"${pkg_name}\") | .dependencies[]" "$RV_PATCHES_JSON" | grep -qF integrations ||
+		[ "${args[merge_integrations]}" = true ]; then
 		p_patcher_args+=("-m ${RV_INTEGRATIONS_APK}")
 	fi
 
@@ -344,20 +358,20 @@ build_rv() {
 		p_patcher_args=("${p_patcher_args[@]//-[ei] ${microg_patch}/}")
 	fi
 
-	local stock_bundle="${TEMP_DIR}/${pkg_name}-${version_f}-${arch}-bundle.zip"
 	local stock_bundle_apk="${TEMP_DIR}/${pkg_name}-${version_f}-${arch}-bundle.apk"
 	local is_bundle=false
 	if [ "$mode_arg" = module ] || [ "$mode_arg" = both ]; then
 		if [ -f "$stock_bundle_apk" ]; then
 			is_bundle=true
-		elif [ "$dl_from" = TODO ]; then
+		elif [ "$dl_from" = apkmirror ]; then
 			pr "Downloading '${app_name}' bundle from APKMirror"
-			if dl_apkmirror "${args[apkmirror_dlurl]}" "$version" "BUNDLE</span>[^@]*@\([^#]*\)" "$stock_bundle"; then
-				pr "'${app_name}' bundle was downloaded successfully and will be used for the module"
-				is_bundle=true
-				unzip "$stock_bundle" "base.apk" -d $TEMP_DIR
-				mv ${TEMP_DIR}/base.apk "$stock_bundle_apk"
-				rm -f "$stock_bundle"
+			if dl_apkmirror "${args[apkmirror_dlurl]}" "$version" "$stock_bundle_apk" BUNDLE "" ""; then
+				if (($(stat -c%s "$stock_apk") - $(stat -c%s "$stock_bundle_apk") > 10000000)); then
+					pr "'${app_name}' bundle was downloaded successfully and will be used for the module"
+					is_bundle=true
+				else
+					pr "'${app_name}' bundle was downloaded but will not be used"
+				fi
 			else
 				pr "'${app_name}' bundle was not found"
 			fi
@@ -432,12 +446,17 @@ build_rv() {
 			"${app_name} ${RV_BRAND}" \
 			"$version" \
 			"${app_name} ${RV_BRAND} Magisk module" \
-			"https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/update/${upj}" \
+			"https://raw.githubusercontent.com/${GITHUB_REPOSITORY:-}/update/${upj}" \
 			"$base_template"
 
 		local module_output="${app_name_l}-${RV_BRAND_F}-magisk-v${version}-${arch}.zip"
 		if [ ! -f "$module_output" ] || [ "$REBUILD" = true ]; then
-			zip_module "$patched_apk" "$module_output" "$stock_apk_module" "$pkg_name" "$base_template"
+			pr "Packing module ($app_name)"
+			cp -f "$patched_apk" "${base_template}/base.apk"
+			cp -f "$stock_apk_module" "${base_template}/${pkg_name}.apk"
+			pushd >/dev/null "$base_template" || abort "Module template dir not found"
+			zip -"$COMPRESSION_LEVEL" -FSqr "../../${BUILD_DIR}/${module_output}" .
+			popd >/dev/null || :
 		fi
 
 		pr "Built ${app_name} (${arch}) (root): '${BUILD_DIR}/${module_output}'"
